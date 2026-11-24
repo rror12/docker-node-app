@@ -1,0 +1,16 @@
+services:
+  my-redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  my-app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - my-redis
+
+volumes:
+  redis-data:
