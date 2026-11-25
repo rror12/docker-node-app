@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Push, and Deploy to EC2
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,3 +25,16 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/rohit-node-app:latest
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/rohit-node-app:latest
+            docker stop rohit-app || true
+            docker rm rohit-app || true
+            docker run -d --name rohit-app -p 3000:3000 --restart unless-stopped ${{ secrets.DOCKERHUB_USERNAME }}/rohit-node-app:latest
+            docker image prune -f
